@@ -43,9 +43,9 @@ export const makeAudioManager = () => {
       // audio continuously with the HTML audio API will allow audio via the Web
       // Audio API to play on the main sound channel in iOS, rather than the
       // ringer channel.
-      // themeAudio = new Audio("./audio/theme.mp3");
-      // themeAudio.loop = true;
-      // themeAudio.play();
+      themeAudio = new Audio("./audio/theme.mp3");
+      themeAudio.loop = true;
+      themeAudio.play();
     }
   };
 

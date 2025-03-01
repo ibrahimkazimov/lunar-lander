@@ -194,28 +194,25 @@ export const makeTerrain = (state) => {
   };
 };
 
+// Generate terrain with midpoint displacement
 function generateTerrainY(width, height, displace, roughness, seededRandom) {
   let points = [];
   let power = Math.pow(2, Math.ceil(Math.log(width) / Math.log(2)));
 
-  // Initialize the starting and ending points with larger initial displacements
-  points[0] = height + seededRandom.getSeededRandom() * displace * 3 - displace * 1.5;
-  points[power] = height + seededRandom.getSeededRandom() * displace * 3 - displace * 1.5;
+  points[0] = height + seededRandom.getSeededRandom() * displace * 2 - displace;
+  points[power] =
+    height + seededRandom.getSeededRandom() * displace * 2 - displace;
 
-  // Increase the roughness gradually for more challenging terrain
-  displace *= roughness * 1.5;
+  displace *= roughness;
 
   for (let i = 1; i < power; i *= 2) {
     for (let j = power / i / 2; j < power; j += power / i) {
-      // Calculate midpoint with additional displacement variation
       points[j] = (points[j - power / i / 2] + points[j + power / i / 2]) / 2;
-      points[j] += (seededRandom.getSeededRandom() * displace * 3 - displace) * 1.2;
+      points[j] += seededRandom.getSeededRandom() * displace * 2 - displace;
     }
 
-    // Increase roughness to make each level more rugged
-    displace *= roughness * 1.3;
+    displace *= roughness;
   }
 
   return points;
 }
-
