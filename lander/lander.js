@@ -592,7 +592,7 @@ export const makeLander = (state, onGameEnd) => {
     destroy,
     resetProps,
     getPosition: () => _position,
-    getAngle: () => _angle,
+    getAngle: () => getAngleDeltaUpright(_angle),
     getAngularVelocity: () => _rotationVelocity,
     getDistanceToGround: () =>
       Math.abs(_position.y - _groundedHeight) / 3.5,

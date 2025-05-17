@@ -17,7 +17,7 @@ async def handle_connection(websocket):
                 # action = agent.predict(game_state)
                 action = {
                     "type": "action",
-                    "action": [True, True, True]  # Placeholder action
+                    "action": [True, True, True]  # Placeholder action, left, right, thrust respectively
                 }
                 action["action"] = [random.choice([True, False]) for _ in action["action"]]
 
