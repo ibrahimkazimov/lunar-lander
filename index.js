@@ -78,7 +78,8 @@ const tally = makeTallyManger();
 
 let sendAsteroid = seededRandomBool(seededRandom);
 let asteroidCountdown = seededRandomBetween(2000, 15000, seededRandom);
-let asteroids = [makeAsteroid(appState, lander.getPosition, onAsteroidImpact)];
+// let asteroids = [makeAsteroid(appState, lander.getPosition, onAsteroidImpact)];
+let asteroids = [];
 let spaceAsteroids = [];
 let randomConfetti = [];
 
@@ -98,6 +99,8 @@ if (!instructions.hasClosedInstructions()) {
 // MAIN ANIMATION LOOP
 
 const animationObject = animate((timeSinceStart, deltaTime) => {
+  sendGameStateToRLAgent();
+
   CTX.fillStyle = theme.backgroundGradient;
   CTX.fillRect(0, 0, canvasWidth, canvasHeight);
 
@@ -224,7 +227,7 @@ function onResetGame() {
   stars.reGenerate();
   sendAsteroid = seededRandomBool(seededRandom);
   asteroidCountdown = seededRandomBetween(2000, 15000, seededRandom);
-  asteroids = [makeAsteroid(appState, lander.getPosition, onAsteroidImpact)];
+  // asteroids = [makeAsteroid(appState, lander.getPosition, onAsteroidImpact)];
   spaceAsteroids = [];
   bonusPointsManager.reset();
 }
@@ -255,3 +258,124 @@ document.addEventListener("keydown", ({ key }) => {
     );
   }
 });
+
+// RL
+
+let rlSocket;
+let previousAction = { thrust: false, left: false, right: false };
+
+function initWebSocket() {
+  rlSocket = new WebSocket("ws://localhost:8765");
+
+  rlSocket.onopen = () => {
+    console.log("Connected to Python RL agent");
+  };
+
+  rlSocket.onmessage = (event) => {
+    try {
+      let actionData = JSON.parse(event.data); // [true, false, false]
+      if (actionData.type === "reset") {
+        lander.resetProps();
+        animationObject.resetStartTime();
+        const resetMeter = (name) => {
+          const meter = document.querySelector(`[data-stat-name="${name}"]`);
+          meter.querySelector("[data-value]").textContent = "";
+
+          meter.querySelector("[data-percent-position]").style.left = `0`;
+        };
+
+        resetMeter("speed");
+        resetMeter("angle");
+        document
+          .querySelector("#endGameStats .buttonContainer")
+          .classList.remove("show");
+        document.querySelector("#endGameStats").classList.remove("show");
+        onResetGame();
+        return;
+      }
+
+      actionData = actionData.action;
+      
+      const newAction = {
+        left: actionData[0],
+        right: actionData[1],
+        thrust: actionData[2],
+      };
+
+      const handleActionChange = (key, applyOnTrue, applyOnFalse) => {
+        if (newAction[key] !== previousAction[key]) {
+          newAction[key] ? applyOnTrue() : applyOnFalse();
+        }
+      };
+
+      handleActionChange(
+        "thrust",
+        () => {
+          lander.engineOn();
+          audioManager.playEngineSound();
+        },
+        () => {
+          lander.engineOff();
+          audioManager.stopEngineSound();
+        }
+      );
+
+      handleActionChange(
+        "left",
+        () => {
+          lander.rotateLeft();
+          audioManager.playBoosterSound1();
+        },
+        () => {
+          lander.stopLeftRotation();
+          audioManager.stopBoosterSound1();
+        }
+      );
+
+      handleActionChange(
+        "right",
+        () => {
+          lander.rotateRight();
+          audioManager.playBoosterSound2();
+        },
+        () => {
+          lander.stopRightRotation();
+          audioManager.stopBoosterSound2();
+        }
+      );
+
+      previousAction = newAction;
+    } catch (e) {
+      console.error("Invalid action received", e);
+    }
+  };
+
+  rlSocket.onerror = (err) => console.error("WebSocket error:", err);
+  rlSocket.onclose = () => console.warn("WebSocket closed");
+}
+
+initWebSocket();
+
+function sendGameStateToRLAgent() {
+  if (rlSocket && rlSocket.readyState === WebSocket.OPEN) {
+    const landingData = terrain.getLandingData();
+    const gameState = {
+      agent: {
+        x: lander.getPosition().x,
+        y: lander.getPosition().y,
+        vx: lander.getVelocity().x,
+        vy: lander.getVelocity().y,
+        angle: lander.getAngle(),
+        angularVelocity: lander.getAngularVelocity(),
+        distanceToGround: lander.getDistanceToGround(),
+      },
+      gameOver: gameEnded,
+      success: lander.getLanded(),
+      landingSurface: landingData.landingSurfaces.find(
+        (x) => x.name === "largeLandingSurface"
+      ),
+    };
+
+    rlSocket.send(JSON.stringify(gameState));
+  }
+}

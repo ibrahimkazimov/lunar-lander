@@ -1,0 +1,18 @@
+{
+  "agent": {
+    "angle": 5.156831206267718,
+    "angularVelocity": -0.16390064535662532,
+    "distanceToGround": 33.39763010407536,
+    "vx": 0.27903630104614424,
+    "vy": 1.6652712726471457,
+    "x": 345.5205760915302,
+    "y": 415.9082946357363
+  },
+  "gameOver": false,
+  "landingSurface": {
+      "name": "smallLandingSurface",
+      "width": 59,
+      "x": 59
+    },
+  "success": false
+}

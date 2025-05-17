@@ -63,6 +63,8 @@ export const makeLander = (state, onGameEnd) => {
   let _maxHeight;
   let _heightMilestone;
   let _babySoundPlayed;
+  let _landed = false;
+  let _crashed = false;
 
   const resetProps = () => {
     const seededRandom = state.get("seededRandom");
@@ -109,6 +111,8 @@ export const makeLander = (state, onGameEnd) => {
   const _isFixedPositionInSpace = () => _position.y < 0;
 
   const _setGameEndData = (landed, struckByAsteroid = false) => {
+    _landed = !!landed;
+
     gameEndData = {
       landed,
       struckByAsteroid,
@@ -149,6 +153,7 @@ export const makeLander = (state, onGameEnd) => {
       _velocity = { x: 0, y: 0 };
       _rotationVelocity = 0;
     } else {
+      _crashed = true
       const score = scoreCrash(
         getAngleDeltaUpright(_angle),
         getVectorVelocity(_velocity)
@@ -587,8 +592,16 @@ export const makeLander = (state, onGameEnd) => {
     destroy,
     resetProps,
     getPosition: () => _position,
+    getAngle: () => _angle,
+    getAngularVelocity: () => _rotationVelocity,
+    getDistanceToGround: () =>
+      Math.abs(_position.y - _groundedHeight) / 3.5,
     getDisplayPosition: () => _displayPosition,
     getVelocity: () => _velocity,
+    // check if landed
+    getLanded: () => _landed,
+    // check if crashed
+    getCrashed: () => _crashed,
     engineOn: () => (_engineOn = true),
     engineOff: () => (_engineOn = false),
     rotateLeft: () => (_rotatingLeft = true),
